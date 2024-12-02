@@ -1,21 +1,44 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { UserDataContext } from "../Context/UserContext";
+import toast from "react-hot-toast";
 
 const UserLogin = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userData, setUserData] = useState({});
 
-  const handleSubmit = (e) => {
+  const { setUser } = useContext(UserDataContext);
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setUserData({
-      email: email,
-      password: password,
-    });
+    const userData = { email, password };
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/users/login",
+        userData
+      );
+
+      const data = response.data;
+
+      if (response.status === 201) {
+        setUser(data.user);
+        localStorage.setItem("token", data.token);
+        navigate("/home");
+      }
+    } catch (error) {
+      if (error.response) {
+        const { data } = error.response;
+        toast.error(data.message || data.errors[0].msg);
+      }
+    }
 
     setEmail("");
     setPassword("");
   };
+
   return (
     <div className="flex flex-col h-screen pt-8 justify-between">
       <div>

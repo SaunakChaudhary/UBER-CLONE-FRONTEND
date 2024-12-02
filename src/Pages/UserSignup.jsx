@@ -1,29 +1,53 @@
-import { useState } from "react";
+import axios from "axios";
+import { useContext, useState } from "react";
 import { NavLink } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { UserDataContext } from "../Context/UserContext";
+import toast from "react-hot-toast";
 
 const UserSignup = () => {
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userData, setUserData] = useState({
-    email: "",
-    fullName: {
-      firstName: "",
-      lastName: "",
-    },
-    password: "",
-  });
-  const handleSubmit = (e) => {
+  const navigate = useNavigate();
+
+  const { setUser } = useContext(UserDataContext);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setUserData({
-      fulllName: {
+    const userData = {
+      fullName: {
         firstName: firstname,
         lastName: lastname,
       },
       email: email,
       password: password,
-    });
+    };
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/users/register",
+        userData
+      );
+
+      if (response.status == 201) {
+        const data = response.data;
+        setUser(data.user);
+        localStorage.setItem("token", data.token);
+        navigate("/home");
+      }
+    } catch (error) {
+      if (error.response) {
+        const { status, data } = error.response;
+        if (status === 400) {
+          toast.error(data.message || data.errors[0].msg);
+        }
+      }
+    }
+    setEmail("");
+    setPassword("");
+    setFirstname("");
+    setLastname("");
   };
   return (
     <div className="flex flex-col h-screen pt-8 justify-between">
@@ -34,7 +58,7 @@ const UserSignup = () => {
           className="w-20 ml-9"
         />
         <div className="mt-5 p-6">
-          <form onSubmit={() => handleSubmit(e)}>
+          <form onSubmit={(e) => handleSubmit(e)}>
             <div className="mb-5">
               <h2 className="text-lg font-semibold">What&apos;s Your Name </h2>
               <div className="w-full flex gap-3">

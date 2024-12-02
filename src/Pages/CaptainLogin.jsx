@@ -1,17 +1,40 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import axios from "axios";
+import { useContext, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { CaptainDataContext } from "../Context/CaptainContext";
+import toast from "react-hot-toast";
 
 const CaptainLogin = () => {
+  const navigate = useNavigate();
+  const {setCaptain} = useContext(CaptainDataContext)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userData, setUserData] = useState({});
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    setUserData({
+    const CaptainData = {
       email: email,
       password: password,
-    });
+    };
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/captains/login",
+        CaptainData
+      );
+
+      const data = response.data;
+
+      if (response.status === 201) {
+        setCaptain(data.user);
+        localStorage.setItem("token", data.token);
+        navigate("/captains-home");
+      }
+    } catch (error) {
+      if (error.response) {
+        const { data } = error.response;
+        toast.error(data.message || data.errors[0].msg);
+      }
+    }
 
     setEmail("");
     setPassword("");
